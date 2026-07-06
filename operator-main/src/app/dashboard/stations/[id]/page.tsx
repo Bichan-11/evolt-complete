@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import api from "@/lib/api";
 import { formatOperatingHours } from "@/lib/utils";
 import { Station, Port } from "@/types";
@@ -37,6 +36,9 @@ export default function StationDetailsPage() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(
+    new Set(),
+  );
 
   // Real-time occupancy updates
   const handleOccupancyChanged = useCallback(
@@ -126,6 +128,10 @@ export default function StationDetailsPage() {
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleImageError = (index: number) => {
+    setFailedImageIndices((prev) => new Set(prev).add(index));
   };
 
   if (isLoading) {
@@ -267,12 +273,28 @@ export default function StationDetailsPage() {
           <div className="space-y-4">
             {/* Main Image */}
             <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-gray-100">
-              <Image
-                src={station.images[currentImageIndex]}
-                alt={`${station.name} - Image ${currentImageIndex + 1}`}
-                fill
-                className="object-cover"
-              />
+              {failedImageIndices.has(currentImageIndex) ||
+              !station.images[currentImageIndex] ? (
+                <div className="flex h-full items-center justify-center">
+                  <div className="text-center">
+                    <ImageIcon className="mx-auto h-12 w-12 text-gray-300" />
+                    <p className="mt-2 text-sm text-gray-500">
+                      Image unavailable
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <img
+                  src={station.images[currentImageIndex]}
+                  alt={`${station.name} - Image ${currentImageIndex + 1}`}
+                  onError={() => handleImageError(currentImageIndex)}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              )}
               
               {/* Navigation arrows for multiple images */}
               {station.images.length > 1 && (
@@ -311,12 +333,22 @@ export default function StationDetailsPage() {
                         : "ring-1 ring-gray-200 hover:ring-gray-300"
                     }`}
                   >
-                    <Image
-                      src={imageUrl}
-                      alt={`Thumbnail ${index + 1}`}
-                      fill
-                      className="object-cover"
-                    />
+                    {failedImageIndices.has(index) ? (
+                      <div className="flex h-full items-center justify-center bg-gray-200">
+                        <ImageIcon className="h-6 w-6 text-gray-400" />
+                      </div>
+                    ) : (
+                      <img
+                        src={imageUrl}
+                        alt={`Thumbnail ${index + 1}`}
+                        onError={() => handleImageError(index)}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    )}
                   </button>
                 ))}
               </div>

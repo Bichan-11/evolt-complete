@@ -69,6 +69,13 @@ const HelperText = styled.Text`
   line-height: 18px;
 `;
 
+const Greeting = styled.Text`
+  color: ${colors.text.primary};
+  font-size: ${typography.sizes.xxl ?? 32}px;
+  font-weight: 800;
+  margin-bottom: ${spacing.lg}px;
+`;
+
 export default function ProfileTabScreen() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout, updateProfile } = useAuth();
@@ -100,7 +107,8 @@ export default function ProfileTabScreen() {
       await updateProfile({
         name: name.trim(),
         phone: phone.trim() || undefined,
-        company: user?.role === "operator" ? company.trim() || undefined : undefined,
+        company:
+          user?.role === "operator" ? company.trim() || undefined : undefined,
       });
       setProfileMessage("Profile updated successfully.");
     } catch (error) {
@@ -148,6 +156,7 @@ export default function ProfileTabScreen() {
   return (
     <Container>
       <Content>
+        <Greeting>Hello, {user.name} 👋</Greeting>
         <HeaderCard>
           <Title>Profile</Title>
           <Subtitle>
@@ -175,7 +184,7 @@ export default function ProfileTabScreen() {
             value={phone}
             onChangeText={setPhone}
             placeholder="Your phone number"
-            keyboardType="phone-pad"
+            keyboardType="numeric"
           />
           {user.role === "operator" ? (
             <FormInput

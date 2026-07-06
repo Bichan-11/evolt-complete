@@ -147,7 +147,7 @@ export default function ManualVehicleScreen() {
           value={efficiency}
           onChangeText={setEfficiency}
           keyboardType="decimal-pad"
-          placeholder="e.g., 0.2"
+          placeholder="e.g., 1"
           error={errors.efficiency}
         />
 

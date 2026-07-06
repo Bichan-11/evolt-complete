@@ -24,6 +24,7 @@ const navItems = [
     name: "My Stations",
     href: "/dashboard/stations",
     icon: MapPin,
+    excludedPaths: ["/dashboard/stations/new"],
   },
   {
     name: "Add Station",
@@ -36,6 +37,23 @@ const navItems = [
     icon: Settings,
   },
 ];
+
+const isRouteActive = (
+  pathname: string,
+  href: string,
+  excludedPaths: string[] = [],
+) => {
+  if (pathname === href) return true;
+  if (href === "/dashboard") return false;
+
+  const isExcluded = excludedPaths.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
+
+  if (isExcluded) return false;
+
+  return pathname.startsWith(`${href}/`);
+};
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -92,9 +110,11 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-2">
         {navItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          const isActive = isRouteActive(
+            pathname,
+            item.href,
+            "excludedPaths" in item ? item.excludedPaths : [],
+          );
           return (
             <Link
               key={item.name}
@@ -106,7 +126,7 @@ export default function Sidebar() {
               } ${collapsed ? "justify-center" : ""}`}
               title={collapsed ? item.name : undefined}
             >
-              <item.icon className="h-5 w-5 flex-shrink-0" />
+              <item.icon className="h-5 w-5 shrink-0" />
               {!collapsed && <span>{item.name}</span>}
             </Link>
           );
@@ -122,7 +142,7 @@ export default function Sidebar() {
           }`}
           title={collapsed ? "Logout" : undefined}
         >
-          <LogOut className="h-5 w-5 flex-shrink-0" />
+          <LogOut className="h-5 w-5 shrink-0" />
           {!collapsed && <span>Logout</span>}
         </button>
       </div>

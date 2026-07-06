@@ -29,6 +29,7 @@ export const colors = {
     disabled: "#bdbdbd",
     inverse: "#ffffff",
     light: "#ffffff",
+    link: "#0000ff99",
   },
   background: {
     default: "#ffffff",

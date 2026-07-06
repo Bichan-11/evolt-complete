@@ -120,15 +120,15 @@ export class VehicleController {
         !make ||
         !modelName ||
         !vehicleType ||
-        image ||
+        !image ||
         batteryCapacity_kWh === undefined ||
         !compatibleConnectors ||
-        compatibleConnectors.length === 0
+        compatibleConnectors.length <= 0
       ) {
         res.status(400).json({
           status: "error",
           message:
-            "make, modelName, image, vehicleType, batteryCapacity_kWh, efficiency_kWh_per_km, " +
+            "make, modelName, image, vehicleType, batteryCapacity_kWh, " +
             "and compatibleConnectors are required",
         });
         return;
@@ -189,6 +189,7 @@ export class VehicleController {
           message:
             "Please provide make, modelName, variant, vehicleType, batteryCapacity_kWh, compatibleConnectors,notes",
         });
+        return;
       }
 
       const {

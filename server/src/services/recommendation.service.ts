@@ -228,7 +228,7 @@ export class RecommendationService {
       )._id.toString(),
       name: station.name,
       address: station.address,
-      distanceKm: 0, // Would need aggregation to get actual distance
+      distanceKm: station.distanceKm,
       status: station.status,
       operatingHours: station.operatingHours,
       images: station.images,

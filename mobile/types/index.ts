@@ -12,6 +12,7 @@ export interface VehicleCatalogItem {
   batteryCapacity_kWh: number;
   efficiency_kWh_per_km?: number;
   compatibleConnectors: ConnectorType[];
+  image?: string;
 }
 
 export interface VehicleSearchResponse {
@@ -159,6 +160,20 @@ export interface RecommendedStation {
     longitude: number;
     latitude: number;
   };
+}
+
+export interface StationDetail {
+  _id?: string;
+  name: string;
+  address: string;
+  status: string;
+  operatingHours: OperatingHours;
+  images?: string[];
+  location: {
+    type: "Point";
+    coordinates: [number, number];
+  };
+  ports: Port[];
 }
 
 // Route Info from backend

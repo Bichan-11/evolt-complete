@@ -5,6 +5,7 @@ import type {
   MyVehicleRequestsResponse,
   RouteRecommendationRequest,
   RouteRecommendationResponse,
+  StationDetail,
   SubmitVehicleRequestPayload,
   SubmitVehicleRequestResponse,
   VehicleSearchResponse,
@@ -163,6 +164,19 @@ export const api = {
     return response.json();
   },
 
+  async getStationById(
+    stationId: string,
+  ): Promise<{ status: string; data: { station: StationDetail } }> {
+    const response = await fetch(`${API_BASE_URL}/stations/${stationId}`);
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Failed to fetch station details: ${error}`);
+    }
+
+    return response.json();
+  },
+
   /**
    * Search places using Nominatim (OpenStreetMap)
    */
@@ -231,7 +245,9 @@ export const api = {
     return data.secure_url as string;
   },
 
-  async getMyVehicleRequests(token: string): Promise<MyVehicleRequestsResponse> {
+  async getMyVehicleRequests(
+    token: string,
+  ): Promise<MyVehicleRequestsResponse> {
     const response = await fetch(`${API_BASE_URL}/vehicles/requests`, {
       headers: {
         "Content-Type": "application/json",

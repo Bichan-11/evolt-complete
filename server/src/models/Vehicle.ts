@@ -14,7 +14,6 @@ export interface VehicleDocument extends Document {
   vehicleType: VehicleType;
   image: string;
   batteryCapacity_kWh: number;
-  efficiency_kWh_per_km: number;
   compatibleConnectors: ConnectorType[];
   isActive: boolean;
   addedBy?: mongoose.Types.ObjectId; // admin who verified/added this entry

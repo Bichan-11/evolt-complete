@@ -3,11 +3,24 @@ import { Stack } from "expo-router";
 export default function MapLayout() {
   return (
     <Stack>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen
-        name="vehicle"
+        name="index"
         options={{
           headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="vehicle/index"
+        options={{
+          title: "Vehicle",
+          headerBackTitle: "Back",
+        }}
+      />
+      <Stack.Screen
+        name="vehicle/manual"
+        options={{
+          title: "Add Vehicle",
+          headerBackTitle: "Back",
         }}
       />
       <Stack.Screen

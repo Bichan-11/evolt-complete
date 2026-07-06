@@ -95,8 +95,10 @@ class ApiService {
     });
     const data = await this.handleResponse<AuthResponse>(response);
 
+    console.log(data.data.user.role);
+
     // Only allow operators and admins
-    if (data.data.user.role !== "operator" && data.data.user.role !== "admin") {
+    if (data.data.user.role !== "operator") {
       throw new Error(
         "Access denied. This portal is for station operators only.",
       );

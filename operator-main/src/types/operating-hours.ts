@@ -1,4 +1,4 @@
-export interface Operating Hours {
+export interface OperatingHours {
   type: "24/7" | "custom";
   openTime?: string; // HH:mm format
   closeTime?: string; // HH:mm format

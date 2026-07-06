@@ -73,7 +73,7 @@ export default function VehicleInfoScreen() {
   const [entryMode, setEntryMode] = useState<EntryMode>("manual");
   const [vehicleType, setVehicleType] = useState<VehicleType>("car");
   const [batteryCapacity, setBatteryCapacity] = useState("60");
-  const [efficiency, setEfficiency] = useState("0.2");
+  const [efficiency, setEfficiency] = useState("1");
   const [batteryPercent, setBatteryPercent] = useState("30");
   const [selectedConnectors, setSelectedConnectors] = useState<ConnectorType[]>(
     ["CCS", "Type2"],
@@ -104,11 +104,11 @@ export default function VehicleInfoScreen() {
     if (vehicleTypeValue === "bike") {
       setSelectedConnectors(["AC_SLOW"]);
       setBatteryCapacity("3");
-      setEfficiency("0.03");
+      setEfficiency("1");
     } else {
       setSelectedConnectors(["CCS", "Type2"]);
       setBatteryCapacity("60");
-      setEfficiency("0.2");
+      setEfficiency("1");
     }
   };
 
@@ -125,7 +125,7 @@ export default function VehicleInfoScreen() {
 
     setVehicleType(selectedVehicleType);
     setBatteryCapacity(String(vehicle.batteryCapacity_kWh));
-    setEfficiency(selectedVehicleType === "bike" ? "0.03" : "0.2");
+    setEfficiency("1");
     setBatteryPercent("30");
     setSelectedConnectors(
       supportedConnectors.length > 0
@@ -185,8 +185,8 @@ export default function VehicleInfoScreen() {
     }
 
     const eff = parseFloat(efficiency);
-    if (isNaN(eff) || eff <= 0 || eff > 1) {
-      newErrors.efficiency = "Efficiency must be between 0 and 1 kWh/km";
+    if (isNaN(eff) || eff <= 0.5 || eff > 1) {
+      newErrors.efficiency = "Efficiency must be between 0.5 and 1 kWh/km";
     }
 
     const percent = parseFloat(batteryPercent);
@@ -317,7 +317,7 @@ export default function VehicleInfoScreen() {
               value={efficiency}
               onChangeText={setEfficiency}
               keyboardType="decimal-pad"
-              placeholder="e.g., 0.2"
+              placeholder="e.g., 1"
               error={errors.efficiency}
             />
 

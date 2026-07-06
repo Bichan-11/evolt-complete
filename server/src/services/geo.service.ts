@@ -23,25 +23,40 @@ export class GeoService {
     latitude: number,
     maxDistanceKm: number,
     vehicleType?: VehicleType,
-  ): Promise<StationDocument[]> {
+  ): Promise<Array<StationDocument & { distanceKm: number }>> {
     const query: Record<string, unknown> = {
       status: "active",
-      location: {
-        $nearSphere: {
-          $geometry: {
-            type: "Point",
-            coordinates: [longitude, latitude],
-          },
-          $maxDistance: maxDistanceKm * 1000, // Convert to meters
-        },
-      },
     };
 
     if (vehicleType) {
       query["ports.vehicleType"] = vehicleType;
     }
 
-    return Station.find(query).exec();
+    const results = await Station.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: [longitude, latitude],
+          },
+          distanceField: "distanceMeters",
+          spherical: true,
+          maxDistance: maxDistanceKm * 1000,
+          query,
+        },
+      },
+    ]).exec();
+
+    return results.map((station: any) => {
+      const distanceKm = station.distanceMeters
+        ? Math.round((station.distanceMeters / 1000) * 100) / 100
+        : 0;
+
+      return {
+        ...station,
+        distanceKm,
+      } as StationDocument & { distanceKm: number };
+    });
   }
 
   /**

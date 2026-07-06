@@ -1,20 +1,13 @@
-import React, { useState, useRef } from "react";
-import {
-  ScrollView,
-  Image,
-  Dimensions,
-  TouchableOpacity,
-  FlatList,
-  View,
-  Text,
-} from "react-native";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import { Dimensions, FlatList, View } from "react-native";
 import { useLocalSearchParams, Stack, useRouter } from "expo-router";
 import styled from "styled-components/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRecommendation } from "@/context/RecommendationContext";
 import { colors, spacing, typography } from "@/theme";
 import { formatOperatingHours, isStationOpen } from "@/services/operatingHours";
-import type { RecommendedStation, NearbyStation } from "@/types";
+import api from "@/services/api";
+import type { RecommendedStation, NearbyStation, StationDetail } from "@/types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -140,7 +133,7 @@ const StatLabel = styled.Text`
 
 const StatusBadge = styled.View<{ status: string }>`
   background-color: ${({ status }) =>
-    status === "operational" ? "#E8F5E9" : colors.background.error};
+    status === "active" ? "#E8F5E9" : colors.background.error};
   padding: ${spacing.xs}px ${spacing.md}px;
   border-radius: 20px;
   align-self: flex-start;
@@ -150,8 +143,7 @@ const StatusBadge = styled.View<{ status: string }>`
 const StatusText = styled.Text<{ status: string }>`
   font-size: ${typography.sizes.sm}px;
   font-weight: 500;
-  color: ${({ status }) =>
-    status === "operational" ? "#2E7D32" : colors.error};
+  color: ${({ status }) => (status === "active" ? "#2E7D32" : colors.error)};
 `;
 
 const NotFoundContainer = styled.View`
@@ -216,10 +208,10 @@ const OperatingHoursBadge = styled.View<{ isOpen: boolean }>`
   flex-direction: row;
   align-items: center;
   background-color: ${({ isOpen }) =>
-    isOpen ? "rgba(46, 125, 50, 0.1)" : "rgba(198, 40, 40, 0.1)"};
+    isOpen ? "#00ff009f" : "rgba(198, 40, 40, 0.1)"};
   padding: ${spacing.xs}px ${spacing.sm}px;
   border-radius: 12px;
-  margin-top: ${spacing.xs}px;
+  margin-top: ${spacing.md}px;
   align-self: flex-start;
 `;
 
@@ -309,56 +301,108 @@ export default function StationDetailScreen() {
 
   const { recommendations, nearbyStations } = useRecommendation();
 
-  // Find the station based on whether it's recommended or nearby
+  const [stationDetail, setStationDetail] = useState<StationDetail | null>(
+    null,
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const isRecommendedStation = isRecommended === "true";
 
-  let station: RecommendedStation | NearbyStation | undefined;
+  const contextStation = useMemo<
+    RecommendedStation | NearbyStation | undefined
+  >(() => {
+    if (isRecommendedStation && recommendations) {
+      return recommendations.find((s) => s.stationId === stationId);
+    }
 
-  if (isRecommendedStation && recommendations) {
-    station = recommendations.find((s) => s.stationId === stationId);
-  } else {
-    station = nearbyStations.find((s) => s.stationId === stationId);
+    return nearbyStations.find((s) => s.stationId === stationId);
+  }, [isRecommendedStation, recommendations, nearbyStations, stationId]);
+
+  useEffect(() => {
+    if (!stationId) return;
+
+    const fetchStationDetail = async () => {
+      setIsLoading(true);
+      setErrorMessage(null);
+
+      try {
+        const result = await api.getStationById(stationId);
+        const fullStationDetail = result.data.station;
+
+        // Merge with contextStation to preserve distance and other metadata
+        const mergedStation = contextStation
+          ? {
+              ...fullStationDetail,
+              distanceKm:
+                contextStation && "distanceKm" in contextStation
+                  ? (contextStation as any).distanceKm
+                  : 0,
+            }
+          : fullStationDetail;
+
+        setStationDetail(mergedStation as any);
+      } catch (error) {
+        setErrorMessage("Unable to load station details. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStationDetail();
+  }, [stationId, contextStation]);
+
+  const station = stationDetail ?? contextStation;
+
+  if (isLoading) {
+    return (
+      <NotFoundContainer>
+        <NotFoundText>Loading station details...</NotFoundText>
+      </NotFoundContainer>
+    );
   }
 
   if (!station) {
     return (
       <NotFoundContainer>
-        <NotFoundText>Station not found</NotFoundText>
+        <NotFoundText>{errorMessage ?? "Station not found"}</NotFoundText>
       </NotFoundContainer>
     );
   }
 
   // Get station coordinates for navigation
   const getStationCoords = () => {
-    if ("location" in station! && "latitude" in station!.location) {
-      // RecommendedStation
+    if ("coordinates" in station.location) {
       return {
-        latitude: (station as RecommendedStation).location.latitude,
-        longitude: (station as RecommendedStation).location.longitude,
-      };
-    } else {
-      // NearbyStation
-      const nearbyStation = station as NearbyStation;
-      return {
-        latitude: nearbyStation.location.coordinates[1],
-        longitude: nearbyStation.location.coordinates[0],
+        latitude: station.location.coordinates[1],
+        longitude: station.location.coordinates[0],
       };
     }
+
+    return {
+      latitude: station.location.latitude,
+      longitude: station.location.longitude,
+    };
   };
+
+  const stationName =
+    "stationName" in station ? station.stationName : station.name;
+  const stationUniqueId =
+    stationId ??
+    ("stationId" in station ? station.stationId : (station._id ?? stationName));
+
+  const displayDistance =
+    "distanceKm" in station ? station.distanceKm : undefined;
 
   // Handle Visit Station button press
   const handleVisitStation = () => {
     const coords = getStationCoords();
-    const name =
-      "stationName" in station!
-        ? (station as RecommendedStation).stationName
-        : (station as NearbyStation).name;
 
     router.push({
       pathname: "/modal",
       params: {
-        stationId: station!.stationId,
-        stationName: name,
+        stationId: stationUniqueId,
+        stationName,
         latitude: coords.latitude.toString(),
         longitude: coords.longitude.toString(),
       },
@@ -373,9 +417,50 @@ export default function StationDetailScreen() {
     ? formatOperatingHours(station.operatingHours)
     : "24/7";
 
+  const hasPortSummary =
+    "portSummary" in station && station.portSummary !== undefined;
+
+  const portSummary = hasPortSummary
+    ? station.portSummary
+    : "ports" in station
+      ? station.ports.reduce(
+          (summary, port) => {
+            if (port.vehicleType === "car") {
+              summary.carPorts += port.total;
+            } else {
+              summary.bikePorts += port.total;
+            }
+            return summary;
+          },
+          { carPorts: 0, bikePorts: 0 },
+        )
+      : { carPorts: 0, bikePorts: 0 };
+
+  const totalSlots =
+    "freeSlots" in station && "totalSlots" in station
+      ? station.totalSlots
+      : "ports" in station
+        ? station.ports.reduce((sum, port) => sum + port.total, 0)
+        : undefined;
+
+  const freeSlots =
+    "freeSlots" in station && "totalSlots" in station
+      ? station.freeSlots
+      : "ports" in station
+        ? station.ports.reduce(
+            (sum, port) => sum + (port.total - port.occupied),
+            0,
+          )
+        : undefined;
+
+  const connectorTypes =
+    "ports" in station
+      ? Array.from(new Set(station.ports.map((port) => port.connectorType)))
+      : [];
+
   // Type guard to check if it's a RecommendedStation
   const isRecommended_ = (
-    s: RecommendedStation | NearbyStation,
+    s: RecommendedStation | NearbyStation | StationDetail,
   ): s is RecommendedStation => {
     return "score" in s;
   };
@@ -537,19 +622,48 @@ export default function StationDetailScreen() {
 
         <Content>
           <StatsGrid>
+            {displayDistance !== undefined && (
+              <StatCard>
+                <StatValue>{displayDistance.toFixed(1)}</StatValue>
+                <StatLabel>Distance (km)</StatLabel>
+              </StatCard>
+            )}
             <StatCard>
-              <StatValue>{station.distanceKm.toFixed(1)}</StatValue>
-              <StatLabel>Distance (km)</StatLabel>
-            </StatCard>
-            <StatCard>
-              <StatValue>{station.portSummary.carPorts}</StatValue>
+              <StatValue>{portSummary.carPorts}</StatValue>
               <StatLabel>Car Ports</StatLabel>
             </StatCard>
             <StatCard>
-              <StatValue>{station.portSummary.bikePorts}</StatValue>
+              <StatValue>{portSummary.bikePorts}</StatValue>
               <StatLabel>Bike Ports</StatLabel>
             </StatCard>
           </StatsGrid>
+
+          {(freeSlots !== undefined || totalSlots !== undefined) && (
+            <Section>
+              <SectionTitle>Availability</SectionTitle>
+              <Card>
+                <InfoRow>
+                  <InfoLabel>Free Slots</InfoLabel>
+                  <InfoValue>{freeSlots ?? "—"}</InfoValue>
+                </InfoRow>
+                <InfoRowLast>
+                  <InfoLabel>Total Slots</InfoLabel>
+                  <InfoValue>{totalSlots ?? "—"}</InfoValue>
+                </InfoRowLast>
+              </Card>
+            </Section>
+          )}
+
+          {connectorTypes.length > 0 && (
+            <Section>
+              <SectionTitle>Connector Types</SectionTitle>
+              <Card>
+                <InfoRowLast>
+                  <InfoValue>{connectorTypes.join(", ")}</InfoValue>
+                </InfoRowLast>
+              </Card>
+            </Section>
+          )}
 
           <Section>
             <SectionTitle>Location</SectionTitle>

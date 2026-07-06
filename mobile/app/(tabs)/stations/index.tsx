@@ -9,6 +9,7 @@ import { useNearbyStations } from "@/hooks/useApi";
 import { PermissionPrompt } from "@/components/common/PermissionPrompt";
 import { colors, spacing, typography } from "@/theme";
 import { formatOperatingHours, isStationOpen } from "@/services/operatingHours";
+import { haversineDistance } from "@/services/distance";
 import type { NearbyStation, RecommendedStation } from "@/types";
 import SafeArea from "@/components/common/SareArea";
 
@@ -295,12 +296,24 @@ export default function StationsListScreen() {
 
   const nearbyStations = nearbyStationsData?.data?.stations ?? [];
 
-  // Sync nearby stations to context
+  // Sync nearby stations to context and calculate distances
   React.useEffect(() => {
-    if (nearbyStations.length > 0) {
-      setNearbyStations(nearbyStations);
+    if (nearbyStations.length > 0 && location) {
+      const stationsWithDistance = nearbyStations.map((station) => ({
+        ...station,
+        distanceKm:
+          Math.round(
+            haversineDistance(
+              location.latitude,
+              location.longitude,
+              station.location.coordinates[1],
+              station.location.coordinates[0],
+            ) * 100,
+          ) / 100,
+      }));
+      setNearbyStations(stationsWithDistance);
     }
-  }, [nearbyStations, setNearbyStations]);
+  }, [nearbyStations, location, setNearbyStations]);
 
   if (isLoading) {
     return (
@@ -378,7 +391,7 @@ export default function StationsListScreen() {
           </HeaderSubtitle>
         </Header>
         <FlatList
-          data={nearbyStations}
+          data={contextNearbyStations}
           keyExtractor={(item) => item.stationId}
           renderItem={({ item }) => (
             <NearbyStationItem

@@ -61,6 +61,14 @@ const ResultImagePlaceholder = styled.View`
   align-items: center;
 `;
 
+const ResultImage = styled.Image`
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  margin-right: ${spacing.md}px;
+  background-color: ${colors.background.default};
+`;
+
 const ResultImageText = styled.Text`
   color: ${colors.text.muted};
   font-size: ${typography.sizes.xs}px;
@@ -169,6 +177,30 @@ export default function VehicleSearchScreen() {
     (connector) => connector.forVehicle === vehicleType,
   );
 
+  const getVehicleImageLabel = (vehicle: {
+    make: string;
+    modelName: string;
+  }) => {
+    const initials = `${vehicle.make?.[0] ?? ""}${vehicle.modelName?.[0] ?? ""}`;
+    return initials.toUpperCase() || "IMG";
+  };
+
+  const renderVehicleImage = (vehicle: {
+    image?: string;
+    make: string;
+    modelName: string;
+  }) => {
+    if (vehicle.image) {
+      return <ResultImage source={{ uri: vehicle.image }} resizeMode="cover" />;
+    }
+
+    return (
+      <ResultImagePlaceholder>
+        <ResultImageText>{getVehicleImageLabel(vehicle)}</ResultImageText>
+      </ResultImagePlaceholder>
+    );
+  };
+
   const savedVehicleProfiles = user?.vehicleProfiles ?? [];
   const hasSavedVehicleProfiles = savedVehicleProfiles.length > 0;
 
@@ -272,7 +304,7 @@ export default function VehicleSearchScreen() {
   const handleSearchVehicles = async (query: string) => {
     const trimmedQuery = query.trim();
 
-    if (trimmedQuery.length < 3) {
+    if (trimmedQuery.length < 2) {
       setSearchResults([]);
       //   setSearchError("Type at least 3 letters to search");
       return;
@@ -308,7 +340,7 @@ export default function VehicleSearchScreen() {
       clearTimeout(debounceTimerRef.current);
     }
 
-    if (searchQuery.trim().length < 3) {
+    if (searchQuery.trim().length < 2) {
       setSearchResults([]);
       //   setSearchError(searchQuery.trim().length === 0 ? "" : "Type at least 3 letters to search.");
       return;
@@ -369,9 +401,7 @@ export default function VehicleSearchScreen() {
           <>
             <FormSection title="Selected Vehicle">
               <ResultCard>
-                <ResultImagePlaceholder>
-                  <ResultImageText>Image</ResultImageText>
-                </ResultImagePlaceholder>
+                {renderVehicleImage(selectedVehicle)}
 
                 <ResultContent>
                   <ResultTitle>{selectedVehicle.make}</ResultTitle>
@@ -407,7 +437,7 @@ export default function VehicleSearchScreen() {
               value={efficiency}
               onChangeText={setEfficiency}
               keyboardType="decimal-pad"
-              placeholder="e.g., 0.2"
+              placeholder="e.g., 1"
               error={errors.efficiency}
             />
 
@@ -442,9 +472,7 @@ export default function VehicleSearchScreen() {
                     `${vehicle.make}-${vehicle.modelName}-${vehicle.variant ?? "base"}`
                   }
                 >
-                  <ResultImagePlaceholder>
-                    <ResultImageText>Image</ResultImageText>
-                  </ResultImagePlaceholder>
+                  {renderVehicleImage(vehicle)}
 
                   <ResultContent>
                     <ResultTitle>{vehicle.make}</ResultTitle>
@@ -521,16 +549,6 @@ export default function VehicleSearchScreen() {
               </HelperText>
             </FormSection>
 
-            {hasSavedVehicleProfiles ? (
-              <ButtonContainer>
-                <PrimaryButton
-                  text="Back to my vehicles"
-                  onPress={openSavedVehiclesSection}
-                  variant="secondary"
-                />
-              </ButtonContainer>
-            ) : null}
-
             {searchResults.length > 0 && (
               <FormSection title="Search Results">
                 {searchResults.map((vehicle) => (
@@ -540,9 +558,7 @@ export default function VehicleSearchScreen() {
                       `${vehicle.make}-${vehicle.modelName}-${vehicle.variant ?? "base"}`
                     }
                   >
-                    <ResultImagePlaceholder>
-                      <ResultImageText>Image</ResultImageText>
-                    </ResultImagePlaceholder>
+                    {renderVehicleImage(vehicle)}
 
                     <ResultContent>
                       <ResultTitle>{vehicle.make}</ResultTitle>
@@ -603,6 +619,15 @@ export default function VehicleSearchScreen() {
                 ))}
               </FormSection>
             )}
+            {hasSavedVehicleProfiles ? (
+              <ButtonContainer>
+                <PrimaryButton
+                  text="Back to vehicles section"
+                  onPress={openSavedVehiclesSection}
+                  variant="secondary"
+                />
+              </ButtonContainer>
+            ) : null}
           </>
         ) : null}
 

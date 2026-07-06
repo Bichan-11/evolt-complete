@@ -147,7 +147,7 @@ export default function PreferencesScreen() {
   const [preferFastCharging, setPreferFastCharging] = useState(true);
   const [preferredConnector, setPreferredConnector] = useState<
     ConnectorType | undefined
-  >(vehicleProfile?.compatibleConnectors[0]);
+  >(undefined);
 
   // Offset state
   const [offsetValue, setOffsetValue] = useState(String(routeOffsetKm * 1000));

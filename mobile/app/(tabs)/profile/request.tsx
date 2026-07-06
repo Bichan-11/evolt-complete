@@ -99,8 +99,13 @@ const CONNECTOR_OPTIONS: ConnectorType[] = [
   "CHAdeMO",
 ];
 
+const ALLOWED_CONNECTORS: Record<VehicleType, ConnectorType[]> = {
+  bike: ["AC_SLOW"],
+  car: ["Type2", "CCS", "CHAdeMO"],
+};
+
 function paramValue(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value ?? "";
+  return Array.isArray(value) ? value[0] : (value ?? "");
 }
 
 function parseConnectorParam(value: string) {
@@ -122,13 +127,19 @@ export default function VehicleRequestScreen() {
   const [requestBatteryCapacity, setRequestBatteryCapacity] = useState("");
   const [requestEfficiency, setRequestEfficiency] = useState("");
   const [requestNotes, setRequestNotes] = useState("");
-  const [requestConnectors, setRequestConnectors] = useState<ConnectorType[]>([]);
+  const [requestConnectors, setRequestConnectors] = useState<ConnectorType[]>(
+    [],
+  );
   const [vehicleImageUrl, setVehicleImageUrl] = useState("");
-  const [requestErrors, setRequestErrors] = useState<Record<string, string>>({});
+  const [requestErrors, setRequestErrors] = useState<Record<string, string>>(
+    {},
+  );
   const [requestMessage, setRequestMessage] = useState("");
   const [requestError, setRequestError] = useState("");
   const [submittingRequest, setSubmittingRequest] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  const availableConnectors = ALLOWED_CONNECTORS[requestType];
 
   useEffect(() => {
     const make = paramValue(params.make);
@@ -154,6 +165,14 @@ export default function VehicleRequestScreen() {
     if (image) setVehicleImageUrl(image);
   }, [params]);
 
+  useEffect(() => {
+    setRequestConnectors((prev) =>
+      prev.filter((connector) =>
+        ALLOWED_CONNECTORS[requestType].includes(connector),
+      ),
+    );
+  }, [requestType]);
+
   const toggleConnector = (connector: ConnectorType) => {
     setRequestConnectors((prev) =>
       prev.includes(connector)
@@ -178,7 +197,8 @@ export default function VehicleRequestScreen() {
     if (requestBatteryCapacity.trim()) {
       const capacity = Number(requestBatteryCapacity);
       if (Number.isNaN(capacity) || capacity <= 0 || capacity > 200) {
-        newErrors.batteryCapacity = "Battery capacity must be between 0 and 200 kWh.";
+        newErrors.batteryCapacity =
+          "Battery capacity must be between 0 and 200 kWh.";
       }
     }
 
@@ -199,7 +219,9 @@ export default function VehicleRequestScreen() {
 
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      setRequestError("Media library permission is required to upload an image.");
+      setRequestError(
+        "Media library permission is required to upload an image.",
+      );
       return;
     }
 
@@ -297,9 +319,7 @@ export default function VehicleRequestScreen() {
       <Container>
         <Content>
           <Title>Request a Vehicle</Title>
-          <Subtitle>
-            Sign in first to submit a vehicle request.
-          </Subtitle>
+          <Subtitle>Sign in first to submit a vehicle request.</Subtitle>
           <PrimaryButton
             text="Go to Sign In"
             onPress={() => router.replace("/(tabs)/profile/signin")}
@@ -321,19 +341,30 @@ export default function VehicleRequestScreen() {
         <FormSection title="Vehicle Image">
           {vehicleImageUrl ? (
             <ImageCard>
-              <ImagePreview source={{ uri: vehicleImageUrl }} resizeMode="cover" />
+              <ImagePreview
+                source={{ uri: vehicleImageUrl }}
+                resizeMode="cover"
+              />
             </ImageCard>
           ) : (
             <ImageCard>
               <ImagePlaceholder>
-                <ImagePlaceholderText>No image uploaded yet</ImagePlaceholderText>
+                <ImagePlaceholderText>
+                  No image uploaded yet
+                </ImagePlaceholderText>
               </ImagePlaceholder>
             </ImageCard>
           )}
 
           <ButtonGroup>
             <PrimaryButton
-              text={uploadingImage ? "Uploading..." : vehicleImageUrl ? "Replace Image" : "Upload Vehicle Image"}
+              text={
+                uploadingImage
+                  ? "Uploading..."
+                  : vehicleImageUrl
+                    ? "Replace Image"
+                    : "Upload Vehicle Image"
+              }
               onPress={() => void handlePickImage()}
               loading={uploadingImage}
               disabled={uploadingImage || submittingRequest}
@@ -346,7 +377,9 @@ export default function VehicleRequestScreen() {
               />
             ) : null}
           </ButtonGroup>
-          {requestErrors.image ? <ErrorText>{requestErrors.image}</ErrorText> : null}
+          {requestErrors.image ? (
+            <ErrorText>{requestErrors.image}</ErrorText>
+          ) : null}
         </FormSection>
 
         <FormSection title="Vehicle Details">
@@ -387,18 +420,10 @@ export default function VehicleRequestScreen() {
             keyboardType="decimal-pad"
             error={requestErrors.batteryCapacity}
           />
-          <FormInput
-            label="Efficiency (kWh/km)"
-            value={requestEfficiency}
-            onChangeText={setRequestEfficiency}
-            placeholder="Optional"
-            keyboardType="decimal-pad"
-            error={requestErrors.efficiency}
-          />
 
           <FormSection title="Compatible Connectors">
             <ChipGroup>
-              {CONNECTOR_OPTIONS.map((connector) => (
+              {availableConnectors.map((connector) => (
                 <Chip
                   key={connector}
                   label={connector}

@@ -36,12 +36,27 @@ const ErrorText = styled.Text`
   margin-top: ${spacing.sm}px;
 `;
 
+const Link = styled.Text`
+  color: ${colors.text.link};
+  font-size: ${typography.sizes.md}px;
+  margin-bottom: ${spacing.xl}px;
+  text-decoration: underline;
+`;
+
+const Spacer = styled.View`
+  margin-top: ${spacing.lg}px;
+  display: flex;
+  flex-direction: row;
+  gap: ${spacing.sm};
+`;
+
 export default function SignInScreen() {
   const router = useRouter();
   const { login, isAuthenticated, isLoading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -102,6 +117,7 @@ export default function SignInScreen() {
             onChangeText={setPassword}
             placeholder="Enter your password"
             keyboardType="default"
+            secureTextEntry={showPassword ? false : true}
           />
         </FormSection>
 
@@ -111,6 +127,16 @@ export default function SignInScreen() {
           text={submitting ? "Signing in..." : "Sign In"}
           onPress={() => void handleSubmit()}
         />
+        <Spacer>
+          <Subtitle>Don't have an account?</Subtitle>
+          <Link
+            onPress={() => {
+              router.replace("/(tabs)/profile/signup");
+            }}
+          >
+            Signup
+          </Link>
+        </Spacer>
       </Content>
     </Container>
   );

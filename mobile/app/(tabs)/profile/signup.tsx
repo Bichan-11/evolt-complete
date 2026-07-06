@@ -36,6 +36,20 @@ const ErrorText = styled.Text`
   margin-top: ${spacing.sm}px;
 `;
 
+const Link = styled.Text`
+  color: ${colors.text.link};
+  font-size: ${typography.sizes.md}px;
+  margin-bottom: ${spacing.xl}px;
+  text-decoration: underline;
+`;
+
+const Spacer = styled.View`
+  margin-top: ${spacing.lg}px;
+  display: flex;
+  flex-direction: row;
+  gap: ${spacing.sm};
+`;
+
 export default function SignUpScreen() {
   const router = useRouter();
   const { register, isAuthenticated, isLoading } = useAuth();
@@ -45,6 +59,7 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -110,6 +125,7 @@ export default function SignUpScreen() {
             value={password}
             onChangeText={setPassword}
             placeholder="Create a password"
+            secureTextEntry={showPassword ? false : true}
           />
         </FormSection>
 
@@ -119,6 +135,17 @@ export default function SignUpScreen() {
           text={submitting ? "Creating account..." : "Create Account"}
           onPress={() => void handleSubmit()}
         />
+
+        <Spacer>
+          <Subtitle>Already have an account?</Subtitle>
+          <Link
+            onPress={() => {
+              router.replace("/(tabs)/profile/signin");
+            }}
+          >
+            Signin
+          </Link>
+        </Spacer>
       </Content>
     </Container>
   );

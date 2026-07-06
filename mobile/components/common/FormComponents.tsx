@@ -1,5 +1,5 @@
 import { colors, spacing, typography } from "@/theme";
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components/native";
 
 interface FormInputProps {
@@ -10,6 +10,7 @@ interface FormInputProps {
   keyboardType?: "default" | "numeric" | "decimal-pad" | "email-address";
   error?: string;
   multiline?: boolean;
+  secureTextEntry?: boolean;
 }
 
 const Container = styled.View`
@@ -23,14 +24,30 @@ const Label = styled.Text`
   margin-bottom: ${spacing.sm}px;
 `;
 
-const Input = styled.TextInput<{ hasError?: boolean }>`
+const InputContainer = styled.View<{ hasError?: boolean }>`
+  flex-direction: row;
+  align-items: center;
   border-width: 1px;
   border-color: ${(props) => (props.hasError ? colors.error : colors.border)};
   border-radius: 10px;
+  background-color: ${colors.background.secondary};
+`;
+
+const Input = styled.TextInput`
+  flex: 1;
   padding: ${spacing.md}px ${spacing.lg}px;
   font-size: ${typography.sizes.md}px;
-  background-color: ${colors.background.secondary};
   color: ${colors.text.primary};
+`;
+
+const ToggleButton = styled.Pressable`
+  padding: ${spacing.md}px;
+`;
+
+const ToggleText = styled.Text`
+  color: ${colors.primary};
+  font-size: ${typography.sizes.sm}px;
+  font-weight: 600;
 `;
 
 const ErrorText = styled.Text`
@@ -47,19 +64,32 @@ export const FormInput: React.FC<FormInputProps> = ({
   keyboardType = "default",
   error,
   multiline = false,
+  secureTextEntry = false,
 }) => {
+  const [hidden, setHidden] = useState(secureTextEntry);
+
   return (
     <Container>
       <Label>{label}</Label>
-      <Input
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={colors.text.muted}
-        keyboardType={keyboardType}
-        hasError={!!error}
-        multiline={multiline}
-      />
+
+      <InputContainer hasError={!!error}>
+        <Input
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={colors.text.muted}
+          keyboardType={keyboardType}
+          multiline={multiline}
+          secureTextEntry={hidden}
+        />
+
+        {secureTextEntry && (
+          <ToggleButton onPress={() => setHidden((prev) => !prev)}>
+            <ToggleText>{hidden ? "Show" : "Hide"}</ToggleText>
+          </ToggleButton>
+        )}
+      </InputContainer>
+
       {error && <ErrorText>{error}</ErrorText>}
     </Container>
   );
